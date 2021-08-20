@@ -1,20 +1,19 @@
+const numeroCasillas = 12;
 
-
-const numeroCasillas = 20;
-
-function start(){
+function start() {
     document.getElementsByClassName("menuPrincipal")[0].remove();
     let mapTablero = new Map();
     generarMundoDisplay();
     elementCasillasToMap(mapTablero);
-
+    //buscarCarreterasInvalidas(mapTablero);
+    cuantosEdificosPorCasilla(mapTablero);
 }
 
 const tipoCasilla = {
-	CARRETERA: "carretera",
-	EDIFICIO: "edificio",
-	RUTA: "ruta",
-	CLIENTE: "cliente"
+    CARRETERA: "carretera",
+    EDIFICIO: "edificio",
+    RUTA: "ruta",
+    CLIENTE: "cliente"
 }
 
 /**
@@ -30,81 +29,138 @@ const tipoCasilla = {
  * Buscar carreteras rodeadas de edificios para tenerlas encuenta para descartarlas del juego. 
  */
 
-function generarMundoDisplay(){
+function generarMundoDisplay() {
 
     var divCasilla = document.createElement("div");
-    
+
     var tablero = document.getElementsByClassName("tablero");
     var fila = document.createElement("div");
     fila.classList.add("fila");
-    for(var i = 1 ; i<numeroCasillas ; i++){
-        for(var j = 1 ; j<numeroCasillas ; j++){
+    for (var i = 1; i < numeroCasillas; i++) {
+        for (var j = 1; j < numeroCasillas; j++) {
             divCasilla.classList.add("casilla");
             divCasilla.classList.add(tipoCasilla.CARRETERA);
 
-            if(isAutovia(i,j)){
-                if(isEdificio()){
+
+            if (isAutovia(i, j)) {
+                if (isEdificio()) {
                     divCasilla.classList.add(tipoCasilla.EDIFICIO);
                 }
-        }
-            fila.appendChild(divCasilla.cloneNode(true));            
+            }
+            fila.appendChild(divCasilla.cloneNode(true));
             divCasilla.classList = "";
-            
+
         }
 
         tablero[0].appendChild(fila.cloneNode(true));
         fila.innerHTML = "";
-        
+
     }
 }
-function isAutovia(i,j){
-    return i%5!==0 && j%5!==0
+
+function isAutovia(i, j) {
+    return i % 6 !== 0 && j % 6 !== 0;
 }
+
 function isEdificio() {
-    let numero = Math.random() * 10 + 1;
-    if (numero > 6) {
+    let numero = Math.random() * 100 + 1;
+    if (numero > 60) {
         return true;
     } else {
         return false;
     }
 }
 
-function buscarCarreterasInvalidas(mapTablero){
-    for(var columna = 0 ; columna<numeroCasillas ; columna++){
-        for(var fila = 0 ; fila<numeroCasillas ; fila++){
-            let casilla = mapTablero.get(columna+"-"+fila);
-            if(casilla.classList.contains(tipoCasilla.CARRETERA)){
-                let casillasVecinas = [];
-                if(columna === 0 && fila === 0){
-                    casillasVecinas.add(mapTablero.get(columna + 1 +"-"+fila));
-                    casillasVecinas.add(mapTablero.get(columna +"-"+fila + 1));
-                }else if(columna === numeroCasillas-1 && fila === numeroCasillas-1){
-                    casillasVecinas.add(mapTablero.get(columna - 1 +"-"+fila));
-                    casillasVecinas.add(mapTablero.get(columna +"-"+fila - 1));
-                }else if(columna === 0 && fila === numeroCasillas-1){
-                    casillasVecinas.add(mapTablero.get(columna + 1 +"-"+fila));
-                    casillasVecinas.add(mapTablero.get(columna +"-"+fila - 1));
-                }else if(columna === numeroCasillas-1 && fila === 0){
-                    casillasVecinas.add(mapTablero.get(columna + 1 +"-"+fila));
-                    casillasVecinas.add(mapTablero.get(columna +"-"+fila - 1));
-                }
-            }
+function cuantosEdificosPorCasilla(mapTablero) {
+    for (var columna = 1; columna < numeroCasillas; columna++) {
+        for (var fila = 1; fila < numeroCasillas; fila++) {
+            coordenada = columna + "-" + fila;
+            mapTablero.get(coordenada);
+
+            //variable necesarias 
+            // let arriba = fila !== 1 ? columna + "-" + (fila - 1) : undefined;
+            // let arribaDerecha = fila !== 1 && columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + (fila - 1) : undefined;
+            // let derecha = columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + fila : undefined;
+            // let abajoDerecha = fila !== (numeroCasillas - 1) && columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + (fila + 1) : undefined;
+            // let abajo = fila !== (numeroCasillas - 1) ? columna + "-" + (fila + 1) : undefined;
+            // let abajoIzquierda = fila !== (numeroCasillas - 1) && columna !== 1 ? (columna - 1) + "-" + (fila + 1) : undefined;
+            // let izquierda = columna !== 1 ? (columna - 1) + "-" + fila : undefined;
+            // let arribaIzquierda = fila !== 1 && columna !== 1 ? (columna + 1) + "-" + (fila + 1) : undefined;
+
+            let CordenadasVecinas = cordenadasVencinasByCordenada(columna, fila);
+            /**
+             *  |13-13|14-13|15-13|
+             *  |13-14|14-14|15-14|
+             *  |13-15|14-15|15-15|
+             */
 
         }
     }
 }
 
-function elementCasillasToMap(mapTablero){
+function cordenadasVencinasByCordenada(columna, fila) {
+
+    return {
+        arriba: fila !== 1 ? columna + "-" + (fila - 1) : undefined,
+        arribaDerecha: fila !== 1 && columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + (fila - 1) : undefined,
+        derecha: columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + fila : undefined,
+        abajoDerecha: fila !== (numeroCasillas - 1) && columna !== (numeroCasillas - 1) ? (columna + 1) + "-" + (fila + 1) : undefined,
+        abajo: fila !== (numeroCasillas - 1) ? columna + "-" + (fila + 1) : undefined,
+        abajoIzquierda: fila !== (numeroCasillas - 1) && columna !== 1 ? (columna - 1) + "-" + (fila + 1) : undefined,
+        izquierda: columna !== 1 ? (columna - 1) + "-" + fila : undefined,
+        arribaIzquierda: fila !== 1 && columna !== 1 ? (columna + 1) + "-" + (fila + 1) : undefined,
+        allVecinas: [],
+    }
+}
+
+
+function buscarCarreterasInvalidas(mapTablero) {
+    for (var columna = 0; columna < numeroCasillas - 1; columna++) {
+        for (var fila = 0; fila < numeroCasillas - 1; fila++) {
+            let casilla = mapTablero.get(columna + "-" + fila);
+            if (casilla.classList.contains(tipoCasilla.CARRETERA)) {
+                let casillasVecinas = [];
+                let izquierda = columna - 1 + "-" + fila;
+                let arriba = columna + "-" + fila - 1;
+                let derecha = columna + 1 + "-" + fila;
+                let abajo = columna + "-" + fila + 1;
+                if (columna === 0 && fila === 0) {
+                    casillasVecinas.pop(mapTablero.get(derecha));
+                    casillasVecinas.pop(mapTablero.get(abajo));
+                } else if (columna === numeroCasillas - 1 && fila === numeroCasillas - 1) {
+                    casillasVecinas.pop(mapTablero.get(izquierda));
+                    casillasVecinas.pop(mapTablero.get(arriba));
+                } else if (columna === 0 && fila === numeroCasillas - 1) {
+                    casillasVecinas.pop(mapTablero.get(derecha));
+                    casillasVecinas.pop(mapTablero.get(arriba));
+                } else if (columna === numeroCasillas - 1 && fila === 0) {
+                    casillasVecinas.pop(mapTablero.get(izquierda));
+                    casillasVecinas.pop(mapTablero.get(abajo));
+                }
+
+                casillasVecinas.map(function(c) {
+                    c.classList.add("noValida");
+                });
+            }
+
+
+
+        }
+    }
+}
+
+function elementCasillasToMap(mapTablero) {
 
     var casillas = document.getElementsByClassName("casilla");
-    var columna = 0;
-    var fila = 0;
-    for( let casilla of casillas){
-        mapTablero.set(columna+"-"+fila,casilla);
+    var columna = 1;
+    var fila = 1;
+    for (let casilla of casillas) {
+        casilla.textContent = columna + "-" + fila;
+        mapTablero.set(columna + "-" + fila, casilla);
         columna++;
 
-        if(columna%numeroCasillas==0){
-            columna = 0;
+        if (columna % (numeroCasillas) === 0) {
+            columna = 1;
             fila++;
         }
     }
