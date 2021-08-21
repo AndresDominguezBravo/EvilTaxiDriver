@@ -1,8 +1,23 @@
-const numeroCasillas = 25;
+const numeroCasillas = 20;
+const unidadCasillasMetros = 100;
 let mapTablero = new Map();
+let Marcadores = {
+    dinero: 0,
+    numClientes: 0,
+    distancia:0,
+}
 
 function start() {
     document.getElementsByClassName("menuPrincipal")[0].remove();
+    generarMundoDisplay();
+    elementCasillasToMap();
+    generarEdificosPorCasilla(tipoGeneracionCasilla.CLIENTE_MAS_TAXI,false);
+    generarClienteMasTaxi();
+    generarEventoCasilla();
+}
+function nextLevel() {
+    document.getElementsByClassName("tablero")[0].innerHTML= "";
+ 
     generarMundoDisplay();
     elementCasillasToMap();
     generarEdificosPorCasilla(tipoGeneracionCasilla.CLIENTE_MAS_TAXI,false);
@@ -149,6 +164,7 @@ function generarEventoCasilla(){
     let listadoCarretas =Array.prototype.slice.call(document.getElementsByClassName(tipoCasilla.CARRETERA));
     listadoCarretas.forEach(element => {
         element.addEventListener("mouseover", añadirEvento);
+        element.addEventListener("touchmove", añadirEvento);
     });
 
 
@@ -160,20 +176,36 @@ function añadirEvento(e){
         let CordenadasConectadas = cordenadasConectadasByCordenada(element.dataColumna, element.dataFila);
         let isRutaOTaxi = false;
         CordenadasConectadas.allConectadas.forEach(c => {
+            let casilla = mapTablero.get(c);
             if(c!==undefined){
-                if(mapTablero.get(c).classList.contains(tipoCasilla.TAXI)
-                     || mapTablero.get(c).classList.contains(tipoCasilla.RUTA )){
+                if(casilla.classList.contains(tipoCasilla.TAXI)){
                     isRutaOTaxi = true;
+                    casilla.classList.remove(tipoCasilla.TAXI);
+                    casilla.classList.add(tipoCasilla.RUTA);
                 }
             }
 
         });
         if(isRutaOTaxi){
-            element.classList.add(tipoCasilla.RUTA);
-        }   
+            if(element.classList.contains(tipoCasilla.CLIENTE)){
+                cargarNuevaRonda();
+            }   
+            element.classList.add(tipoCasilla.TAXI);
+        }
+        
     }
     
 
+}
+
+function cargarNuevaRonda(){
+
+    Marcadores.distancia += document.getElementsByClassName(tipoCasilla.RUTA).length * unidadCasillasMetros;
+    Marcadores.numClientes 
+    = ++Marcadores.numClientes;
+    Marcadores.dinero += Marcadores.distancia * 0.002;
+    console.log(Marcadores);
+    nextLevel();
 }
 
 function cordenadasVencinasByCordenada(columna, fila) {
