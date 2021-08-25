@@ -1,33 +1,5 @@
 const numeroCasillas = 20;
 const unidadCasillasMetros = 100;
-let mapTablero = new Map();
-let Marcadores = {
-    dinero: 0,
-    numClientes: 0,
-    distancia: 0,
-}
-let ultimoMovimiento = "";
-let intervalo = 0;
-
-function start(isPrimeraRonda) {
-    if (isPrimeraRonda) {
-        document.getElementsByClassName("menuPrincipal")[0].remove();
-        document.getElementsByClassName("score")[0].style.display = 'block';
-        document.getElementById("controles").style.display = 'inline-block';
-    } else {
-        document.getElementsByClassName("tablero")[0].innerHTML = "";
-    }
-    generarMundoDisplay();
-    elementCasillasToMap();
-    generarEdificosPorCasilla(tipoGeneracionCasilla.CLIENTE_MAS_TAXI, false);
-    generarClienteMasTaxi();
-    generarEventoCasilla();
-    generarEventoTeclado();
-    document.getElementById("MarcadorDinero").textContent = Marcadores.dinero;
-    document.getElementById("MarcadorClientes").textContent = Marcadores.numClientes;
-    document.getElementById("MarcadorTiempo").textContent = nuevaCuentaAtras();
-}
-
 const tipoCasilla = {
     CARRETERA: "carretera",
     EDIFICIO: "edificio",
@@ -41,7 +13,75 @@ const tipoGeneracionCasilla = {
     CLIENTE_MAS_TAXI: 1,
     EDIFICIOS: 2
 }
+let mapTablero = new Map();
+let Marcadores = {
+    dinero: 250,
+    numClientes: 0,
+    distancia: 0,
+    gasolina: 500,
+    damage: 100
+}
+let registros = [];
 
+
+class Registro {
+    constructor(tipoRegistro, dineroAnterior, dineroAhora, descripcion) {
+        this.tipo = tipoRegistro;
+        this.dineroAnterior = dineroAnterior;
+        this.dineroAhora = dineroAhora;
+        this.descripcion = descripcion;
+    }
+}
+
+const tipoRegistro = {
+    PAGO: "pago",
+    COBRO: "cobro"
+}
+
+let ultimoMovimiento = "";
+let intervalo = 0;
+let impuestoRodaje = 0;
+let impuestoITV = 0;
+let impuestoHacienda = 0;
+
+
+function start(isPrimeraRonda) {
+    if (isPrimeraRonda) {
+        document.getElementsByClassName("menuPrincipal")[0].remove();
+        document.getElementsByClassName("menuResumenPartida")[0].style.display = 'none';
+        document.getElementsByClassName("score")[0].style.display = 'block';
+        document.getElementById("controles").style.display = 'inline-block';
+        generarEventoTeclado();
+        cobrarImpuestos();
+    } else {
+        document.getElementsByClassName("tablero")[0].innerHTML = "";
+    }
+    generarMundoDisplay();
+    elementCasillasToMap();
+    generarEdificosPorCasilla(tipoGeneracionCasilla.CLIENTE_MAS_TAXI, false);
+    generarEventoCasilla();
+    reponerMarcadores();
+    generarClienteMasTaxi();
+    document.getElementsByClassName("tablero")[0].style.display = 'block';
+
+}
+
+
+function reponerMarcadores() {
+
+    Marcadores = {
+        dinero: 250,
+        numClientes: 0,
+        distancia: 0,
+        gasolina: 500,
+        damage: 100
+    }
+
+    document.getElementById("MarcadorDinero").textContent = Marcadores.dinero;
+    document.getElementById("MarcadorClientes").textContent = Marcadores.numClientes;
+    document.getElementById("MarcadorGasolina").textContent = Marcadores.gasolina;
+    document.getElementById("MarcadorDamage").textContent = Marcadores.damage;
+}
 
 function generarMundoDisplay() {
 
@@ -197,10 +237,14 @@ function generarEventoTeclado() {
 function movimientoPerpetuoTaxi(movimiento) {
 
     if (ultimoMovimiento !== movimiento) {
-        moverTaxi(movimiento);
-        if (intervalo <= 1) {
+        ultimoMovimiento = movimiento;
+        clearInterval(intervalo);
+        let controlNuevaRonda = moverTaxi(movimiento);
+        if (!controlNuevaRonda) {
             intervalo = setInterval(moverTaxi, 200, movimiento);
         }
+
+
     }
 
 
@@ -214,20 +258,14 @@ function moverTaxi(movimiento) {
 
     switch (movimiento) {
         case "arriba":
-            logicaMoverTaxi(datosTaxi.arriba, auxTaxi);
-            break;
+            return logicaMoverTaxi(datosTaxi.arriba, auxTaxi);
         case "abajo":
-            logicaMoverTaxi(datosTaxi.abajo, auxTaxi);
-            break;
+            return logicaMoverTaxi(datosTaxi.abajo, auxTaxi);
         case "derecha":
-            logicaMoverTaxi(datosTaxi.derecha, auxTaxi);
-            break;
+            return logicaMoverTaxi(datosTaxi.derecha, auxTaxi);
         case "izquierda":
-            logicaMoverTaxi(datosTaxi.izquierda, auxTaxi);
-            break;
+            return logicaMoverTaxi(datosTaxi.izquierda, auxTaxi);
     }
-
-    ultimoMovimiento = movimiento;
 }
 
 function logicaMoverTaxi(nextCoordenadas, auxTaxi) {
@@ -236,9 +274,14 @@ function logicaMoverTaxi(nextCoordenadas, auxTaxi) {
             mapTablero.get(nextCoordenadas).classList.add(tipoCasilla.TAXI);
             auxTaxi.classList.remove(tipoCasilla.TAXI);
             auxTaxi.classList.add(tipoCasilla.RUTA);
+            gastarGasolina();
+            return false;
         } else {
             cargarNuevaRonda();
+            return true;
         }
+    } else {
+        roperVehiculo();
     }
 }
 
@@ -254,7 +297,6 @@ function isMovimientoValido(nextCoordenadas) {
 }
 
 function añadirEvento(e) {
-    clearInterval(intervalo);
     element = e.target;
     if (element.classList.contains(tipoCasilla.CARRETERA)) {
         let CordenadasConectadas = cordenadasConectadasByCordenada(element.dataColumna, element.dataFila);
@@ -266,6 +308,7 @@ function añadirEvento(e) {
                     isRutaOTaxi = true;
                     casilla.classList.remove(tipoCasilla.TAXI);
                     casilla.classList.add(tipoCasilla.RUTA);
+                    gastarGasolina();
                 }
             }
 
@@ -277,22 +320,93 @@ function añadirEvento(e) {
             element.classList.add(tipoCasilla.TAXI);
         }
 
+
+
     }
+
+
+}
+
+function finPartida() {
+    let divLista = document.getElementsByClassName("menuResumenPartida")[0];
+    clearInterval(impuestoITV);
+    clearInterval(impuestoHacienda);
+    clearInterval(impuestoRodaje);
+    divLista.style.display = "block";
+    registros.forEach(element => {
+        let linea = document.createElement("p");
+        linea.textContent = element.descripcion + " " + element.dineroAnterior + " " + element.dineroAhora
+        divLista.appendChild(linea);
+    });
+    document.getElementsByClassName("tablero")[0].style.display = 'none';
+    document.getElementById("controles").style.display = 'none';
+    clearInterval(intervalo);
+}
+
+function roperVehiculo() {
+    clearInterval(intervalo);
+    if (Marcadores.damage > 0) {
+        Marcadores.damage = Marcadores.damage - 5;
+    } else {
+        Marcadores.damage = 100;
+        cobrarDinero(200, "Reparación del vehiculo");
+    }
+
+    document.getElementById("MarcadorDamage").textContent = Marcadores.damage;
+
+}
+
+function cobrarDinero(dinero, descripcion) {
+    Marcadores.dinero = Marcadores.dinero - dinero;
+    document.getElementById("MarcadorDinero").textContent = Marcadores.dinero;
+    let registro = new Registro(tipoRegistro.PAGO, Marcadores.dinero, (Marcadores.dinero + dinero), descripcion);
+    registros.push(registro);
+    if (Marcadores.dinero < 0) {
+        finPartida();
+    }
+}
+
+function cobrarImpuestos() {
+
+    impuestoRodaje = setInterval(cobrarDinero, 750000, 50, "Impuesto de rodaje");
+    impuestoITV = setInterval(cobrarDinero, 360000, 75, "Impuesto ITV");
+    impuestoHacienda = setInterval(cobrarDinero, 500000, Math.floor(Marcadores.dinero * 25) / 100, "Agencia Tributaria");
+
+}
+
+function gastarGasolina() {
+    if (Marcadores.gasolina > 0) {
+        Marcadores.gasolina = Marcadores.gasolina - 1;
+    } else {
+        Marcadores.gasolina = 500;
+
+        cobrarDinero(80, "Repostar combustible");
+    }
+
+    document.getElementById("MarcadorGasolina").textContent = Marcadores.gasolina;
 
 
 }
 
 function cargarNuevaRonda() {
     clearInterval(intervalo);
+    ultimoMovimiento = "";
     let distancia = document.getElementsByClassName(tipoCasilla.RUTA).length * unidadCasillasMetros;
     Marcadores.distancia += distancia * unidadCasillasMetros;
     Marcadores.numClientes = ++Marcadores.numClientes;
     Marcadores.dinero = Marcadores.dinero + Math.floor(distancia * 0.002);
+    let registro = new Registro(tipoRegistro.COBRO, Marcadores.dinero, (Marcadores.dinero - Math.floor(distancia * 0.002)), "Cobro por ruta finalizada");
+    registros.push(registro);
     document.getElementById("MarcadorDinero").textContent = Marcadores.dinero;
     document.getElementById("MarcadorClientes").textContent = Marcadores.numClientes;
-    document.getElementById("MarcadorTiempo").textContent = nuevaCuentaAtras();
+    document.getElementById("MarcadorGasolina").textContent = Marcadores.gasolina;
+    document.getElementById("MarcadorDamage").textContent = Marcadores.damage;
     console.log(Marcadores);
     start(false);
+}
+
+function nuevoCliente(random) {
+
 }
 
 function nuevaCuentaAtras() {

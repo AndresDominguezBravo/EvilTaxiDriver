@@ -13,14 +13,19 @@
 <body>
     <div class="score">
         <p class="TextoScore">Dinero:<span id="MarcadorDinero"></span></p>
-        <p class="TextoScore">Tiempo:<span id="MarcadorTiempo"></span></p>
+        <p class="TextoScore">Gasolina:<span id="MarcadorGasolina"></span></p>
         <p class="TextoScore">Nº Clientes:<span id="MarcadorClientes"></span></p>
+        <p class="TextoScore">Daño del Vehiculo:<span id="MarcadorDamage"></span></p>
     </div>
     <div class="menuPrincipal">
         <h2>Evil Taxi Drive</h2>
         <div class="opcionesMenuPrincipal">
             <button onclick="start(true)">Empezar Partida</button>
         </div>
+    </div>
+    <div class="menuResumenPartida">
+
+        <button onclick="start(false)">Volver a jugar</button>
     </div>
     <div class="game">
         <div class="tablero"></div>
